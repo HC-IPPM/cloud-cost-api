@@ -53,7 +53,7 @@ type Query {
 const mocks = {
     String: () => 'Mock Data',
     Float: () => {
-        return casual.double(0,500)
+        return (casual.double(0,500)).toFixed(2)
     },
     Name: () => {
         return casual.random_element(['Product Innovation', 'Infrastructure Management', 'Product Management', 'Infrastructure Sustainment', 'Cloud Services and Infrastructure'])
