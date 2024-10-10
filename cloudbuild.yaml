@@ -1,0 +1,46 @@
+steps:
+  - name: node:18-alpine
+    id: install
+    entrypoint: npm
+    args: ['ci', '--no-optional']
+
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: generate-image-name
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "northamerica-northeast1-docker.pkg.dev/${PROJECT_ID}/cloud-run-source-deploy/cloud-cost-api:$BRANCH_NAME-$SHORT_SHA" > /workspace/imagename
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: build-image
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        image=$(cat /workspace/imagename)
+        docker build -t $image .
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: push-image
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        image=$(cat /workspace/imagename)
+        docker push $image
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: deploy-to-cloudrun
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        image=$(cat /workspace/imagename)
+        gcloud run deploy cloud-cost-api --image $image --region northamerica-northeast1
+
+images:
+  - northamerica-northeast1-docker.pkg.dev/${PROJECT_ID}/cloud-run-source-deploy/cloud-cost-api:$BRANCH_NAME-$SHORT_SHA
+
+  
