@@ -1,18 +1,18 @@
-FROM node:18-alpine
+FROM golang:1.23.3 as builder
+ARG CGO_ENABLED=0
+WORKDIR /build
 
-ENV NODE_ENV development
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+
+RUN go build -o ./cloud-cost-api
+
+# Stage 2
+FROM gcr.io/distroless/static-debian12
+# FROM alpine:3.14
 
 WORKDIR /app
-
-COPY package*.json ./
-
-RUN npm ci
-
-COPY ./schema.js .
-COPY ./server.js .
-
-USER node
-
-EXPOSE 8080
-
-CMD npm run start
+COPY --from=builder /build/cloud-cost-api ./cloud-cost-api
+COPY --from=builder /build/service_account.json ./service_account.json
+CMD ["/app/cloud-cost-api"]

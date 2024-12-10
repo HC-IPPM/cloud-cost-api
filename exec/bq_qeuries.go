@@ -33,7 +33,7 @@ func CostQueryStr(needAllProjects bool) string {
         project.id AS project_id,
     
         -- Cost with no credits applied
-        SUM(cost) AS final_cost,
+        SUM(cost) AS final_cost_no_credits,
     
         SUM(CASE 
             WHEN ARRAY_LENGTH(credits) = 0 THEN 0 
@@ -52,7 +52,7 @@ func CostQueryStr(needAllProjects bool) string {
     
         -- billing_export_view LOGIC TO COMPUTE FINAL_COST, the credits_sum_amount is computed with COALESCE((SELECT SUM(x.amount) FROM UNNEST(credits) x),0)
         SUM(cost) + SUM(credits_sum_amount) 
-        as final_cost_alt
+        as final_cost
     
       FROM` + "`pdcp-serv-001-budgets.billing_daily_costs.billing-export-view` " + project_id_string +
 		`GROUP BY 1,2,3
