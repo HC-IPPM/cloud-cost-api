@@ -14,5 +14,5 @@ FROM gcr.io/distroless/static-debian12
 
 WORKDIR /app
 COPY --from=builder /build/cloud-cost-api ./cloud-cost-api
-COPY --from=builder /build/service_account.json ./service_account.json
+# COPY --from=builder /build/service_account.json ./service_account.json
 CMD ["/app/cloud-cost-api"]
