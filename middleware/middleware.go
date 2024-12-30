@@ -2,36 +2,54 @@ package middleware
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"net/http"
 	"strings"
-	// "github.com/HC-IPPM/cloud-cost-api/auth"
+
+	"github.com/HC-IPPM/cloud-cost-api/auth"
+	"github.com/HC-IPPM/cloud-cost-api/persistence"
 )
 
 type contextKey string
 
 const userKey contextKey = "user"
 
+func GetAccessTokenCookie(r *http.Request) (string, error) {
+	cookie, err := r.Cookie("access_token")
+	if err != nil {
+		return "", err
+	}
+	return cookie.Value, nil
+}
+
 // Middleware to validate OAuth2 token
-func OAuth2Middleware(next http.Handler) http.Handler {
+func OAuth2Middleware(ctx context.Context, next http.Handler) http.Handler {
+
+	store := ctx.Value("sessionStore").(*persistence.Session)
+	oauth := ctx.Value("oauth").(*auth.GcpOAuth)
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
+		token, sessionExists := store.GetSession(w, r)
 		if authHeader == "" {
-			http.Error(w, "missing Authorization header", http.StatusUnauthorized)
-			return
-		}
-
-		token := strings.TrimPrefix(authHeader, "Bearer ")
-		if token == authHeader {
-			http.Error(w, "invalid Authorization header", http.StatusUnauthorized)
-			return
+			if !sessionExists {
+				// http.Error(w, "Missing Auth token", http.StatusUnauthorized)
+				http.Redirect(w, r, "/token", http.StatusFound)
+				return
+			}
+		} else {
+			token = strings.TrimPrefix(authHeader, "Bearer ")
+			if token == authHeader {
+				// http.Error(w, "invalid Authorization header", http.StatusUnauthorized)
+				http.Redirect(w, r, "/token", http.StatusFound)
+				return
+			}
 		}
 
 		// Validate token with Google OAuth2
-		userInfo, err := validateToken(token)
+		userInfo, err := oauth.ValidateToken(token)
 		if err != nil {
-			http.Error(w, "invalid or expired token", http.StatusUnauthorized)
+			// http.Error(w, "invalid or expired token", http.StatusUnauthorized)
+			http.Redirect(w, r, "/token", http.StatusFound)
 			return
 		}
 
@@ -39,21 +57,6 @@ func OAuth2Middleware(next http.Handler) http.Handler {
 		ctx := context.WithValue(r.Context(), userKey, userInfo)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
-}
-
-// validateToken fetches user info to validate the token
-func validateToken(token string) (map[string]interface{}, error) {
-	resp, err := http.Get("https://www.googleapis.com/oauth2/v3/userinfo?access_token=" + token)
-	if err != nil || resp.StatusCode != http.StatusOK {
-		return nil, errors.New("Invalid or expired token")
-	}
-	defer resp.Body.Close()
-
-	var userInfo map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&userInfo); err != nil {
-		return nil, err
-	}
-	return userInfo, nil
 }
 
 // FromContext retrieves user info from context

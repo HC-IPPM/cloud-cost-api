@@ -1,5 +1,5 @@
+secrets.json
 service_account.json
 cloud-cost-api
-secrets.json
 id_token.go
 rateLimiter/

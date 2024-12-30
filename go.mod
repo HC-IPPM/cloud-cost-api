@@ -5,7 +5,9 @@ go 1.23.3
 require (
 	cloud.google.com/go/bigquery v1.64.0
 	github.com/99designs/gqlgen v0.17.57
+	github.com/gorilla/sessions v1.4.0
 	github.com/vektah/gqlparser/v2 v2.5.19
+	golang.org/x/oauth2 v0.24.0
 	google.golang.org/api v0.203.0
 )
 
@@ -29,6 +31,7 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.4 // indirect
 	github.com/googleapis/gax-go/v2 v2.13.0 // indirect
+	github.com/gorilla/securecookie v1.1.2 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/klauspost/compress v1.16.7 // indirect
@@ -49,7 +52,6 @@ require (
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
 	golang.org/x/mod v0.20.0 // indirect
 	golang.org/x/net v0.30.0 // indirect
-	golang.org/x/oauth2 v0.24.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/sys v0.26.0 // indirect
 	golang.org/x/text v0.19.0 // indirect
