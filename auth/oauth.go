@@ -15,14 +15,14 @@ import (
 
 type Oauth interface {
 	ExchangeCode(context.Context, string) (*oauth2.Token, error)
-	AuthCodeURL(string, ...interface{}) (string)
+	AuthCodeURL(string, ...interface{}) string
 	ValidateToken(string) (map[string]interface{}, error)
 	GenerateState() string
 	ValidateState(string) bool
 }
 
 type GcpOAuth struct {
-	Config *oauth2.Config
+	Config     *oauth2.Config
 	StateStore map[string]bool
 }
 
@@ -30,7 +30,7 @@ func NewGoogleOAuth(ctx context.Context) *GcpOAuth {
 	var GoogleOAuthConfig = &oauth2.Config{
 		ClientID:     ctx.Value("oAuthClientID").(string),
 		ClientSecret: ctx.Value("oAuthClientSecret").(string),
-		RedirectURL:  "http://localhost:8080/oauth2callback",
+		RedirectURL:  ctx.Value("oAuthCallbackURL").(string),
 		Scopes:       []string{"email", "profile", "openid"},
 		Endpoint:     google.Endpoint,
 	}

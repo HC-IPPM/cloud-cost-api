@@ -28,6 +28,7 @@ func (sesh *Session) SetSession(w http.ResponseWriter, r *http.Request, accessTo
 		Path:     "/",
 		MaxAge:   3600,
 		HttpOnly: true,
+		Secure: true,
 		SameSite: http.SameSiteLaxMode,
 	}
 	session.Values["access_token"] = accessToken

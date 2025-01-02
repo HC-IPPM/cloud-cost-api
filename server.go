@@ -16,6 +16,7 @@ import (
 	"github.com/HC-IPPM/cloud-cost-api/graph"
 	"github.com/HC-IPPM/cloud-cost-api/middleware"
 	"github.com/HC-IPPM/cloud-cost-api/persistence"
+	_ "github.com/googleapis/enterprise-certificate-proxy/client"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/option"
 )
@@ -28,6 +29,7 @@ var Oauth auth.Oauth
 type Secrets struct {
 	OAuthClientID     string `json:"oAuthClientID"`
 	OAuthClientSecret string `json:"oAuthClientSecret"`
+	OAuthCallbackURL  string `json:"oAuthCallbackURL"`
 	SessionKey        string `json:"sessionKey"`
 }
 
@@ -107,13 +109,25 @@ func loadSecrets(ctx context.Context, filePath string) context.Context {
 	ctx = context.WithValue(ctx, "sessionKey", secrets.SessionKey)
 	ctx = context.WithValue(ctx, "oAuthClientID", secrets.OAuthClientID)
 	ctx = context.WithValue(ctx, "oAuthClientSecret", secrets.OAuthClientSecret)
+	ctx = context.WithValue(ctx, "oAuthCallbackURL", secrets.OAuthCallbackURL)
 	return ctx
+}
+
+func BigQueryClient(ctx context.Context, projectID string) (*bigquery.Client, error) {
+	// Application Default Credentials will be used if the service account key file 
+	// does not exist
+	_, err := os.Stat("./service_account.json")
+	if os.IsNotExist(err) {
+		return bigquery.NewClient(ctx, projectID)
+	} else {
+		return bigquery.NewClient(ctx, projectID, option.WithCredentialsFile("./service_account.json"))
+	}
 }
 
 func main() {
 	ctx := context.Background()
 
-	ctx = loadSecrets(ctx, "./secrets.json")
+	ctx = loadSecrets(ctx, "/tmp/secrets.json")
 
 	SessionStore = persistence.NewCookieStore(ctx)
 	ctx = context.WithValue(ctx, "sessionStore", SessionStore)
@@ -122,7 +136,8 @@ func main() {
 	ctx = context.WithValue(ctx, "oauth", Oauth)
 
 	projectID := `pdcp-serv-001-budgets`
-	client, err := bigquery.NewClient(ctx, projectID, option.WithCredentialsFile("./service_account.json"))
+	client, err := BigQueryClient(ctx, projectID)
+
 	if err != nil {
 		fmt.Errorf(err.Error())
 	}
