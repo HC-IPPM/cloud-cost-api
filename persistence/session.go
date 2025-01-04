@@ -2,6 +2,7 @@ package persistence
 
 import (
 	"context"
+	_ "fmt"
 	"net/http"
 
 	"github.com/gorilla/sessions"
@@ -37,6 +38,8 @@ func (sesh *Session) SetSession(w http.ResponseWriter, r *http.Request, accessTo
 
 func (sesh *Session) GetSession(w http.ResponseWriter, r *http.Request) (string, bool) {
 	// Get the session
+	// fmt.Println(r.RemoteAddr)
+	// fmt.Println(r.Header.Get("X-Forwarded-For"))
 	session, _ := sesh.Store.Get(r, "user-session")
 	token, ok := session.Values["access_token"].(string)
 	return token, ok

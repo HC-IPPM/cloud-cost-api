@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -22,41 +23,73 @@ func GetAccessTokenCookie(r *http.Request) (string, error) {
 }
 
 // Middleware to validate OAuth2 token
-func OAuth2Middleware(ctx context.Context, next http.Handler) http.Handler {
+func OAuth2Middleware(ctx context.Context, success interface{}, failure interface{}) http.Handler {
 
 	store := ctx.Value("sessionStore").(*persistence.Session)
 	oauth := ctx.Value("oauth").(*auth.GcpOAuth)
 
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
 		token, sessionExists := store.GetSession(w, r)
+
 		if authHeader == "" {
 			if !sessionExists {
 				// http.Error(w, "Missing Auth token", http.StatusUnauthorized)
-				http.Redirect(w, r, "/token", http.StatusFound)
-				return
+				val, ok := failure.(string)
+				if ok {
+					http.Redirect(w, r, val, http.StatusFound)
+					return
+				} else{
+					handler := failure.(http.Handler)
+					handler.ServeHTTP(w, r)
+				}
 			}
 		} else {
 			token = strings.TrimPrefix(authHeader, "Bearer ")
 			if token == authHeader {
-				// http.Error(w, "invalid Authorization header", http.StatusUnauthorized)
-				http.Redirect(w, r, "/token", http.StatusFound)
-				return
+				val, ok := failure.(string)
+				if ok {
+					http.Redirect(w, r, val, http.StatusFound)
+					return
+				} else{
+					handler := failure.(http.Handler)
+					handler.ServeHTTP(w, r)
+				}
 			}
 		}
 
-		// Validate token with Google OAuth2
-		userInfo, err := oauth.ValidateToken(token)
-		if err != nil {
-			// http.Error(w, "invalid or expired token", http.StatusUnauthorized)
-			http.Redirect(w, r, "/token", http.StatusFound)
-			return
-		}
+		if(sessionExists){
+			// Validate token with Google OAuth2
+			userInfo, err := oauth.ValidateToken(token)
+			if err != nil {
+				fmt.Print("invalid or expired token ")
+				val, ok := failure.(string)
+				if ok {
+					http.Redirect(w, r, val, http.StatusFound)
+					return
+				} else{
+					handler := failure.(http.Handler)
+					handler.ServeHTTP(w, r)
+				}
+			}
 
-		// Add user info to context
-		ctx := context.WithValue(r.Context(), userKey, userInfo)
-		next.ServeHTTP(w, r.WithContext(ctx))
+			// Add user info to context
+			ctx := context.WithValue(r.Context(), userKey, userInfo)
+			val, ok := success.(string)
+			if ok {
+				http.Redirect(w, r, val, http.StatusFound)
+				return
+			} else{
+				handler := success.(http.Handler)
+				handler.ServeHTTP(w, r.WithContext(ctx))
+			}
+		}
 	})
+}
+
+func RateLimitMiddleware(ctx context.Context, next http.Handler) http.Handler {
+	return nil
 }
 
 // FromContext retrieves user info from context
