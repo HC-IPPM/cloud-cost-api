@@ -82,8 +82,8 @@ func handleCallback(w http.ResponseWriter, r *http.Request) {
 
 	token, err := Oauth.ExchangeCode(r.Context(), code)
 	fmt.Println("Access Token ", token.AccessToken)
-	fmt.Println("Refresh Token ",token.RefreshToken)
-	fmt.Println("ID Token ",token.Extra("id_token"))
+	fmt.Println("Refresh Token ", token.RefreshToken)
+	fmt.Println("ID Token ", token.Extra("id_token"))
 	if err != nil {
 		http.Error(w, "failed to exchange token", http.StatusInternalServerError)
 		return
@@ -118,7 +118,7 @@ func loadSecrets(ctx context.Context, filePath string) context.Context {
 }
 
 func BigQueryClient(ctx context.Context, projectID string) (*bigquery.Client, error) {
-	// Application Default Credentials will be used if the service account key file 
+	// Application Default Credentials will be used if the service account key file
 	// does not exist
 	_, err := os.Stat("./service_account.json")
 	if os.IsNotExist(err) {
@@ -157,9 +157,9 @@ func main() {
 	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: resolver}))
 
 	r := mux.NewRouter()
-	r.Handle("/query", middleware.OAuth2Middleware(ctx, srv, "/token"))
-	r.Handle("/token", middleware.OAuth2Middleware(ctx,"/",http.HandlerFunc(handleGenerateToken)))
-	r.Handle("/login", middleware.OAuth2Middleware(ctx,"/",http.HandlerFunc(handleLogin)))
+	r.Handle("/query", middleware.OAuth2Middleware(ctx, srv, http.HandlerFunc(handleGenerateToken)))
+	r.Handle("/token", middleware.OAuth2Middleware(ctx, "/", http.HandlerFunc(handleGenerateToken)))
+	r.Handle("/login", middleware.OAuth2Middleware(ctx, "/", http.HandlerFunc(handleLogin)))
 	r.HandleFunc("/logout", handleLogout)
 	r.HandleFunc("/oauth2callback", handleCallback)
 	r.Handle("/", middleware.OAuth2Middleware(

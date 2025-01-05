@@ -28,7 +28,6 @@ func OAuth2Middleware(ctx context.Context, success interface{}, failure interfac
 	store := ctx.Value("sessionStore").(*persistence.Session)
 	oauth := ctx.Value("oauth").(*auth.GcpOAuth)
 
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
 		token, sessionExists := store.GetSession(w, r)
@@ -40,7 +39,7 @@ func OAuth2Middleware(ctx context.Context, success interface{}, failure interfac
 				if ok {
 					http.Redirect(w, r, val, http.StatusFound)
 					return
-				} else{
+				} else {
 					handler := failure.(http.Handler)
 					handler.ServeHTTP(w, r)
 				}
@@ -52,14 +51,14 @@ func OAuth2Middleware(ctx context.Context, success interface{}, failure interfac
 				if ok {
 					http.Redirect(w, r, val, http.StatusFound)
 					return
-				} else{
+				} else {
 					handler := failure.(http.Handler)
 					handler.ServeHTTP(w, r)
 				}
 			}
 		}
 
-		if(sessionExists){
+		if sessionExists {
 			// Validate token with Google OAuth2
 			userInfo, err := oauth.ValidateToken(token)
 			if err != nil {
@@ -68,7 +67,7 @@ func OAuth2Middleware(ctx context.Context, success interface{}, failure interfac
 				if ok {
 					http.Redirect(w, r, val, http.StatusFound)
 					return
-				} else{
+				} else {
 					handler := failure.(http.Handler)
 					handler.ServeHTTP(w, r)
 				}
@@ -80,7 +79,7 @@ func OAuth2Middleware(ctx context.Context, success interface{}, failure interfac
 			if ok {
 				http.Redirect(w, r, val, http.StatusFound)
 				return
-			} else{
+			} else {
 				handler := success.(http.Handler)
 				handler.ServeHTTP(w, r.WithContext(ctx))
 			}
